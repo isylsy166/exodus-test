@@ -1,0 +1,35 @@
+name: exodustest-app
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: exodustest-app:latest
+    container_name: exodustest-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # 컨테이너 안에서는 localhost:3307이 아니라 DB 네트워크의 서비스명(mysql:3306)으로 접속
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/exodus_test?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: exodus
+      SPRING_DATASOURCE_PASSWORD: exodus
+      # 요구사항대로 컨테이너는 8080 고정 (로컬에서 다른 포트로 띄우더라도 영향 없음)
+      SERVER_PORT: 8080
+      TZ: Asia/Seoul
+    networks:
+      - default
+      - db
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+networks:
+  # docker-mysql.yml이 만든 네트워크에 붙는다 (해당 파일을 먼저 up 해둬야 함)
+  db:
+    name: exodustest_default
+    external: true
